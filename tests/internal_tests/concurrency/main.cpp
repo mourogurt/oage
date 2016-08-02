@@ -1,18 +1,12 @@
 #include <iostream>
-#include <thread_guard.hpp>
 #include <event.hpp>
-#include <deque>
 #include <chrono>
 #include <thread>
 #include <mutex>
 #include <atomic>
-#include <array>
-#include <algorithm>
 #include <boost/lockfree/queue.hpp>
 #include <vector>
 #include <condition_variable>
-#include <ctime>
-#include <bitset>
 
 template <std::size_t Size = 20000, class Type = EventBase*, class Queue = boost::lockfree::queue<Type,boost::lockfree::capacity<Size>> ,class Container = std::vector<Queue>>
 class ThreadPool {
