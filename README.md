@@ -9,6 +9,7 @@ Open Async Game Engine - Main goal of this engine: Create asynchronous event-bas
 * Implement clock timer, frame rate timer(not started)
 * Implement event logic
 * Etc...
+
 # Unit-tests
 * Event exec (mostly done)
 * Thread guard test exec (mostly done)
