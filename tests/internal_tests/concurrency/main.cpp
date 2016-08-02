@@ -12,6 +12,7 @@
 #include <vector>
 #include <condition_variable>
 #include <ctime>
+#include <bitset>
 
 template <std::size_t Size = 20000, class Type = EventBase*, class Queue = boost::lockfree::queue<Type,boost::lockfree::capacity<Size>> ,class Container = std::vector<Queue>>
 class ThreadPool {
@@ -45,8 +46,45 @@ public:
                 },i,l);
             }
         }
-
-        //TODO:(Critical) Add second and third situation of threads
+        auto v = size - k * queues_size;
+        if (queues_size % v == 0) {
+            k = queues_size / v;
+            for (auto i = 0u; i < v; ++i) {
+                for (auto j = 0u; j < k; ++j)
+                    thread_index[j+i*k].push_back(i);
+                workers.emplace_back([this](unsigned num_queues, unsigned thread_id) {
+                    std::mutex mut;
+                    std::unique_lock<std::mutex> lk(mut);
+                    std::vector<bool> all_finished (num_queues,false);
+                    auto count = 0u;
+                    while (true) {
+                        //TODO:(High) Add barrier
+                        //TODO:(Critical) add soft barrier for max queue
+                        thread_cond[thread_id].wait(lk,[this,&num_queues,&thread_id]{
+                            if (stoped) return true;
+                            for (unsigned i = 0; i < num_queues; ++i) {
+                                if (!queues[i+thread_id*num_queues].empty()) return true;
+                            }
+                            std::cout << "All is empty!\n";
+                            return false;
+                        });
+                        for (unsigned i = 0; i < num_queues; ++i) {
+                            if (!queues[i+thread_id*num_queues].empty()) {
+                                queues[i+thread_id*num_queues].consume_one([](auto i) {
+                                    (*i)();
+                                    delete i;
+                                });
+                            } else {
+                                if (stoped) {
+                                    if (!all_finished[i]) { count++; all_finished[i]=!all_finished[i]; }
+                                    else if (count ==num_queues ) return;
+                                }
+                            }
+                        }
+                    }
+                },k,i);
+            }
+        } //TODO: (Critical) Add third situation
     }
     bool push(const Type& T ,const unsigned& que_num) {
         if (!stoped) {
@@ -86,49 +124,9 @@ public:
 };
 
 int main () {
-    ThreadPool<> pool(std::thread::hardware_concurrency(),4);
-    const unsigned tasks = 1000;
-    std::mutex mut;
-    std::unique_lock<std::mutex> lk(mut);
-    std::atomic_uint counter {0};
-    std::condition_variable var;
-    auto start {std::chrono::steady_clock::now()}, end{start};
-    for (auto i = 0u; i < tasks; i++) {
-        auto ptr = make_event_ptr_base([&counter,&var](){
-            srand(0);
-            for (auto n = 0; n < 1; ++n) {
-                std::array<int, 200000> buff;
-                for (unsigned i = 0; i < 200000; ++i) {
-                    buff[i] = rand();
-                }
-                std::sort(buff.begin(),buff.end());
-            }
-            counter++;
-            var.notify_one();
-        });
-        pool.push(ptr.release(),i % pool.queue_size());
-    }
-    var.wait(lk,[&counter,&pool]{return counter == tasks;});
-    end = std::chrono::steady_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count() << std::endl;
-    counter = 0;
-    start = std::chrono::steady_clock::now();
-    for (auto i = 0u; i < tasks; i++) {
-        std::thread(make_event([&counter,&var](){
-            srand(0);
-            for (auto n = 0; n < 1; ++n) {
-                std::array<int, 200000> buff;
-                for (unsigned i = 0; i < 200000; ++i) {
-                    buff[i] = rand();
-                }
-                std::sort(buff.begin(),buff.end());
-            }
-            counter++;
-            var.notify_one();
-        })).detach();
-    }
-    var.wait(lk,[&counter,&pool]{return counter == tasks;});
-    end = std::chrono::steady_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count() << std::endl;
-
+    ThreadPool<> pool(2,8);
+    for (auto i = 0u; i < pool.queue_size(); ++i)
+        pool.push(make_event_ptr_base([](auto i){
+            std::cout<<i << std::endl ;
+        },i).release(),i);
 }
