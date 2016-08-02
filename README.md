@@ -17,3 +17,4 @@ Open Async Game Engine - Main goal of this engine: Create asynchronous event-bas
 * Exec threadpool when qn % tn == 0 and  qn > tn (not started)
 * Exec threadpool when qn % tn != 0 and qn > tn (not started)
 * Exec threadpool when tn % qn != 0 and tn >= qn (not started)
+* Etc...
