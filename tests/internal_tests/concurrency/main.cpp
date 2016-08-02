@@ -23,15 +23,15 @@ public:
         for (auto i = 0u, l = 0u; i < queues.size(); ++i) {
             for (auto j = 0u; j < k; ++j, ++l) {
                 thread_index[i].push_back(l);
-                workers.emplace_back([this](unsigned id, unsigned thread_id) {
+                workers.emplace_back([this](unsigned queue_id, unsigned thread_id) {
                     std::mutex mut;
                     std::unique_lock<std::mutex> lk(mut);
                     while (true) {
                         //TODO:(High) Add barrier
                         //TODO:(Critical) add soft barrier for max queue
-                        thread_cond[thread_id].wait(lk,[this,&id]{ return !queues[id].empty() || stoped; });
-                        if (!queues[id].empty()) {
-                            queues[id].consume_one([](auto i) {
+                        thread_cond[thread_id].wait(lk,[this,&queue_id]{ return !queues[queue_id].empty() || stoped; });
+                        if (!queues[queue_id].empty()) {
+                            queues[queue_id].consume_one([](auto i) {
                                 (*i)();
                                 delete i;
                             });
@@ -59,7 +59,6 @@ public:
                             for (unsigned i = 0; i < num_queues; ++i) {
                                 if (!queues[i+thread_id*num_queues].empty()) return true;
                             }
-                            std::cout << "All is empty!\n";
                             return false;
                         });
                         for (unsigned i = 0; i < num_queues; ++i) {
