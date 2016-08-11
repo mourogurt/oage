@@ -7,6 +7,16 @@
 #include <boost/lockfree/queue.hpp>
 #include <vector>
 #include <condition_variable>
+#include <math.hpp>
+
+//TODO: (Critical) Add event call when all queues empty
+//TODO: (High) Max queue size(try-push,wait-push)
+//TODO: (High) buffer push
+//TODO: (Medium) Support deleting events from pool
+//TODO: (Medium) Add copy and move constructor
+//TODO: (Medium) add clear queues
+//TODO: (Medium) Add barrier
+//TODO: (Low) Resizing,Adding multipile queues if max queue size
 
 template <std::size_t Size = 20000, class Type = EventBase*, class Queue = boost::lockfree::queue<Type,boost::lockfree::capacity<Size>> ,class Container = std::vector<Queue>>
 class ThreadPool {
