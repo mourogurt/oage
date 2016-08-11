@@ -1,20 +1,19 @@
 # oage
-Open Async Game Engine - Main goal of this engine: Create asynchronous event-based games
+Open Async Game Engine - Asynchronous event-based game engine
+
 # roadmap
 * Implement multi queue threadpool (WIP)
+* Implement graph of events dependencies (not started) 
 * Implement continuous scheduler (not started)
-* Implement events dependencies (not started)
-* Implement async allocator (not started)
+* Implement priority scheduler (not started)
 * Implement random scheduler (not started)
+* Implement async allocator (not started)
 * Implement clock timer, frame rate timer(not started)
-* Implement event logic
+* Implement event logic (not started)
+* Implement runtime scripts throw cling (not started) 
 * Etc...
 
 # Unit-tests
 * Event exec (mostly done)
 * Thread guard test exec (mostly done)
-* Exec threadpool when threads. num(tn) % queues. num(qn) == 0 and tn >= qn (started)
-* Exec threadpool when qn % tn == 0 and  qn > tn (not started)
-* Exec threadpool when qn % tn != 0 and qn > tn (not started)
-* Exec threadpool when tn % qn != 0 and tn >= qn (not started)
-* Etc...
+* Exec threadpool (WIP)
