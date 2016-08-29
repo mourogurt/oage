@@ -9,7 +9,10 @@
 #include <condition_variable>
 #include <math.hpp>
 
-//TODO: (Critical) Add event call when all queues empty
+//TODO: (Critical) Add event call when all queues empty 3
+//TODO: (Critical) Add constructor for manual distribution threads of queues 2
+//TODO: (Critical) Don't create queue in class, instead just add references 1
+//TODO: (Critical) Remove notification from push and add explicit notify function
 //TODO: (High) Max queue size(try-push,wait-push)
 //TODO: (High) buffer push
 //TODO: (Medium) Support deleting events from pool
@@ -42,6 +45,7 @@ public:
                         if (!queues[queue_id].empty()) {
                             queues[queue_id].consume_one([](auto&& i) {
                                 (*i)();
+                                delete i;
                             });
                         }
                         else if (!stoped) {
@@ -77,6 +81,7 @@ public:
                                 continue_thread = true;
                                 queues[i+group_id*queue_group_size].consume_one([](auto&& i) {
                                     (*i)();
+                                    delete i;
                                 });
                             } else {
                                 if (stoped) {
@@ -97,6 +102,8 @@ public:
             }
         }
     }
+
+    void remove_thread();
 
     bool push(const Type& T ,const unsigned& que_num) {
         if (!stoped) {
@@ -123,6 +130,9 @@ public:
     size_t queue_size() const noexcept {
         return queues.size();
     }
+
+
+
 
     bool is_empty() const noexcept {
         return th_stoped_counter.load() == workers.size(); //TODO: (Low) think about memory_order

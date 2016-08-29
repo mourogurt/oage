@@ -9,6 +9,7 @@ Project {
     property string includeDirName: "include"
     property string binDirName: "bin"
     name: "Open Async Game Engine"
+    minimumQbsVersion: 1.6
     property bool withAutotests: qbs.buildVariant === "debug"
     property bool testsEnabled: Environment.getEnv("TEST") || qbs.buildVariant === "debug"
     qbsSearchPaths: "qbs"
