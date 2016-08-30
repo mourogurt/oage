@@ -37,7 +37,8 @@ decltype (auto) copy_tuple(const std::tuple<Args...>& t) {
 }
 
 //TODO: Critical add Var Table to Task
-struct TaskBase {
+class TaskBase {
+public:
     TaskBase() {}
     TaskBase(const TaskBase&) {}
     TaskBase(TaskBase&&) {}
@@ -48,17 +49,36 @@ struct TaskBase {
 TaskBase::~TaskBase() {
 }
 
-template <class Func, class Tuple>
-struct Task : TaskBase {
-    Task() = delete;
-    Task(const Func& foo, const Tuple& t) noexcept: event_func(foo), t(t) {}
-    Task(Func&& foo, Tuple&& t) noexcept : event_func(std::move(foo)) , t(std::move(t)) {}
-    Func event_func;
+template<class Tuple>
+struct TaskVarTable : public TaskBase {
     Tuple t;
-    virtual void operator() () override {
-        std::experimental::apply(event_func,t);
+public:
+    TaskVarTable() = delete ;
+    TaskVarTable(const TaskVarTable& other_event) noexcept : TaskVarTable(other_event.t) {}
+    TaskVarTable(TaskVarTable&& other_event) noexcept : TaskVarTable(other_event.t) {}
+    TaskVarTable (const Tuple& t) noexcept: t(t) {}
+    TaskVarTable (Tuple&& t) noexcept: t(std::move(t)) {}
+    virtual Tuple& getVarPointersTable () {
+        return t;
     }
+    virtual void operator ()() = 0;
+};
 
+template <class Func, class Tuple>
+class Task : public TaskVarTable<Tuple> {
+    Func event_func;
+public:
+    Task() = delete ;
+    Task(const Task& other_event) noexcept : Task(other_event.event_func,other_event.t) {}
+    Task(Task&& other_event) noexcept : Task(other_event.event_func,other_event.t) {}
+    Task(const Func& foo, const Tuple& t) noexcept: TaskVarTable<Tuple>(t), event_func(foo) {}
+    Task(Func&& foo, Tuple&& t) noexcept : TaskVarTable<Tuple>(std::move(t)), event_func(std::move(foo)) {}
+    virtual Tuple& getVarPointersTable () override {
+        return TaskVarTable<Tuple>::t;
+    }
+    virtual void operator() () override {
+        std::experimental::apply(event_func,TaskVarTable<Tuple>::t);
+    }
     virtual ~Task() override {
     }
 };
@@ -90,7 +110,7 @@ public:
     EventVarTable (const Tuple& t) noexcept: t(t) {}
     EventVarTable (Tuple&& t) noexcept: t(std::move(t)) {}
     virtual Tuple getVarPointersTable () {
-        return EventVarTable<Tuple>::t;
+        return t;
     }
     virtual std::unique_ptr<TaskBase> generateTask () = 0;
     virtual ~EventVarTable();
@@ -101,7 +121,7 @@ EventVarTable<Tuple>::~EventVarTable() {
 }
 
 template <class Func, class Tuple>
-struct Event : EventVarTable<Tuple> {
+class Event : public EventVarTable<Tuple> {
     Func event_func;
 public:
     Event() = delete ;
@@ -109,7 +129,7 @@ public:
     Event(Event&& other_event) noexcept : Event(other_event.event_func,other_event.t) {}
     Event(const Func& foo, const Tuple& t) noexcept: EventVarTable<Tuple>(t), event_func(foo) {}
     Event(Func&& foo, Tuple&& t) noexcept : EventVarTable<Tuple>(std::move(t)), event_func(std::move(foo)) {}
-    virtual Tuple getVarPointersTable () {
+    virtual Tuple getVarPointersTable () override {
         return EventVarTable<Tuple>::t;
     }
     virtual std::unique_ptr<TaskBase> generateTask () {
@@ -176,8 +196,8 @@ constexpr decltype (auto) sizeof_tuple(__attribute__((unused)) Tuple&& t) {
 }
 
 std::vector<std::unique_ptr<EngineExperiments::EventBase>> event_pool;
-std::mutex pool_lock;
-ThreadPool<20000,EngineExperiments::TaskBase*> pool(std::thread::hardware_concurrency(),1);
+std::mutex pool_lock,out_lock;
+ThreadPool<20000,EngineExperiments::TaskBase*> pool(std::thread::hardware_concurrency(),std::thread::hardware_concurrency());
 
 int main() {
     {
@@ -185,6 +205,7 @@ int main() {
         event_pool.emplace_back(EngineExperiments::make_event_base_ptr([]{
             std::lock_guard<decltype (pool_lock)> lk(pool_lock);
             event_pool.emplace_back(EngineExperiments::make_event_base_ptr([](const auto& item) {
+                std::lock_guard<decltype (out_lock)> lk(out_lock);
                 std::cout << item << std::endl;
             },0u));
             auto index = event_pool.size() - 1;
@@ -192,13 +213,9 @@ int main() {
             auto base_event = event_pool[index].get();
             EngineExperiments::TaskBase* task;
             for (auto i = 0u; i < 100u; ++i) {
-                {
-                    std::lock_guard<decltype (*base_event)> ev_lk(*base_event);
-                    std::tie(ptr) = dynamic_cast<EngineExperiments::EventVarTable<std::tuple<decltype (ptr)>>*>(base_event)->getVarPointersTable();
-                    *ptr = i;
-                    task = base_event->generateTask().release();
-                }
-                pool.push(task,0);
+                task = base_event->generateTask().release();
+                dynamic_cast<EngineExperiments::TaskVarTable<std::tuple<decltype (i)>>*>(task)->getVarPointersTable() = std::tie(i);
+                pool.push(task,i % pool.queue_size());
             }
         }));
         auto index = event_pool.size() - 1;
@@ -207,6 +224,8 @@ int main() {
         auto task = base_event->generateTask();
         pool.push(task.release(),0);
     }
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
     pool.wait_for_empty();
     /*int a = 3;
     auto event = EngineExperiments::make_event_base_ptr([](const auto& item){

@@ -9,6 +9,8 @@
 #include <condition_variable>
 #include <math.hpp>
 
+//FIXME: Waiting if empty
+
 //TODO: (Critical) Add event call when all queues empty 3
 //TODO: (Critical) Add constructor for manual distribution threads of queues 2
 //TODO: (Critical) Don't create queue in class, instead just add references 1
