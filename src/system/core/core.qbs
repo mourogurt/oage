@@ -4,6 +4,6 @@ Project {
     references: [
         "Events/events.qbs",
         "Threads/threads.qbs",
-        "Math/math.qbs"
+        "Utils/utils.qbs"
     ]
 }

@@ -23,7 +23,7 @@
 //TODO: (Medium) Add barrier
 //TODO: (Low) Resizing,Adding multipile queues if max queue size
 
-template <std::size_t Size = 20000, class Type = EventBase*, class Queue = boost::lockfree::queue<Type,boost::lockfree::capacity<Size>> ,class Container = std::vector<Queue>>
+template <std::size_t Size = 20000, class Type = TaskBase*, class Queue = boost::lockfree::queue<Type,boost::lockfree::capacity<Size>> ,class Container = std::vector<Queue>>
 class ThreadPool {
     Container queues;
     std::vector<std::vector<unsigned>> thread_index;

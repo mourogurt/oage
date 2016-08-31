@@ -9,11 +9,11 @@ Product {
     ]
     Depends { name: "cpp" }
     Depends { name: "Event System" }
-    Depends { name: "Math Module" }
+    Depends { name: "Utils Module" }
     Export {
             Depends { name: "cpp" }
             Depends { name: "Event System" }
-            Depends { name: "Math Module" }
+            Depends { name: "Utils Module" }
             cpp.includePaths: base.concat(product.sourceDirectory)
             cpp.dynamicLibraries: base.concat("pthread")
             cpp.cxxLanguageVersion: "c++1z"

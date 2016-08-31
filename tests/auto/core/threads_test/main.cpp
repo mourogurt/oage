@@ -9,16 +9,7 @@ private slots:
 };
 
 void TestExecThread::execEvent() {
-    auto first (0u), second(0u);
-    {
-        thread_guard(std::thread([&first](){
-            first = 50u;
-        }),make_event_ptr_base([&second]() {
-            second = 100u;
-        }));
-    }
-    QCOMPARE(first,50u);
-    QCOMPARE(second,100u);
+    //TODO: Critical
 }
 
 QTEST_MAIN(TestExecThread)

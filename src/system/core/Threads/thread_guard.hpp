@@ -3,7 +3,7 @@
 #include <event.hpp>
 #include <thread>
 
-class thread_guard
+/*class thread_guard
 {
     std::thread t;
     std::unique_ptr<EventBase> ev {nullptr};
@@ -27,6 +27,6 @@ public:
             t.join();
         }
     }
-};
+};*/
 
 #endif // THREAD_GUARD_HPP

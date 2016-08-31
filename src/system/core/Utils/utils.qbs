@@ -1,7 +1,7 @@
 import qbs
 
 Product {
-    name: "Math Module"
+    name: "Utils Module"
     cpp.cxxLanguageVersion: "c++1z"
     files: [
         "*.hpp",
