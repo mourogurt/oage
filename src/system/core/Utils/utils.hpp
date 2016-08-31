@@ -3,8 +3,6 @@
 #include <tuple>
 #include <memory>
 #include <mutex>
-#include <iostream>
-#include <type_traits>
 
 template<class F, class...Args>
 constexpr void for_each_arg(F&&f,Args&&...args){

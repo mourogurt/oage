@@ -1,6 +1,7 @@
 #ifndef THREAD_GUARD_HPP
 #define THREAD_GUARD_HPP
 #include <event.hpp>
+
 #include <thread>
 
 /*class thread_guard
