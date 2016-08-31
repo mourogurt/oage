@@ -7,34 +7,26 @@
 std::mutex pool_lock,out_lock;
 
 int main() {
-    auto event_pool = Singleton<std::vector<std::unique_ptr<EventBase>>>::getHandler();
-    auto pool = Singleton<ThreadPool<>>::getHandler(std::thread::hardware_concurrency(),std::thread::hardware_concurrency());
+    auto event_pool = Singleton<std::vector<std::unique_ptr<EventBase>>>::createHandler();
+    auto pool = Singleton<ThreadPool<>>::createHandler(std::thread::hardware_concurrency(),std::thread::hardware_concurrency());
     {
         std::lock_guard<decltype (pool_lock)> lk(pool_lock);
         event_pool->emplace_back(make_event_base_ptr([]{
-            EventBase* base_event;
+            size_t index {0};
             auto event_pool = Singleton<std::vector<std::unique_ptr<EventBase>>>::getHandler();
-            auto pool = Singleton<ThreadPool<>>::getHandler(std::thread::hardware_concurrency(),std::thread::hardware_concurrency());
+            auto pool = Singleton<ThreadPool<>>::getHandler();
             {
                 std::lock_guard<decltype (pool_lock)> lk(pool_lock);
                 event_pool->emplace_back(make_event_base_ptr([](const auto& item) {
                     std::lock_guard<decltype (out_lock)> lk(out_lock);
                     std::cout << item << std::endl;
                 },0u));
-                auto index = event_pool->size() - 1;
-                base_event = event_pool->at(index).get();
+                index = event_pool->size() - 1;
             }
-            TaskBase* task;
-            for (auto i = 0u; i < 100u; ++i) {
-                task = base_event->generateTask().release();
-                set_task_values(task,i);
-                pool->push(task,i % pool->queue_size());
-            }
+            for (auto i = 0u; i < 10000000u; ++i)
+                pool->push(set_task_values(event_pool->at(index)->generateTask().release(),i),i % pool->queue_size());
         }));
-        auto index = event_pool->size() - 1;
-        auto base_event = event_pool->at(index).get();
-        auto task = base_event->generateTask();
-        pool->push(task.release(),0);
+        pool->push(event_pool->at(event_pool->size() - 1)->generateTask().release(),0);
     }
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1ms);

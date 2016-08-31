@@ -51,6 +51,7 @@ public:
     }
 };
 
+//TODO: High generate raw task
 class EventBase {
     std::mutex mut;
 public:
@@ -138,8 +139,11 @@ constexpr decltype (auto) make_event_base_ptr(T&& t, Args&& ...args) {
 }
 
 template<class... Args>
-constexpr void set_task_values(TaskBase* task, Args&& ...args){
+constexpr decltype (auto) set_task_values(TaskBase* task, Args&& ...args){
     dynamic_cast<TaskVarTable<typename std::decay<Args>::type...>*>(task)->getVarPointersTable() = std::make_tuple(std::forward<Args>(args)...);
+    return task;
 }
+
+//TODO: High make task command
 
 #endif // EVENT_HPP

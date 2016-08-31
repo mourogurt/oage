@@ -3,6 +3,8 @@
 #include <tuple>
 #include <memory>
 #include <mutex>
+#include <iostream>
+#include <type_traits>
 
 template<class F, class...Args>
 constexpr void for_each_arg(F&&f,Args&&...args){
@@ -25,12 +27,15 @@ template<class T>
 class Singleton {
     static std::unique_ptr<T> ptr;
     static std::once_flag once;
-public:
+public: //TODO: (normal) Looks weird, need fix
     template<class ...Args>
-    static decltype (auto) getHandler (Args&&... args) {
+    static decltype (auto) createHandler (Args&&... args) {
         std::call_once(once,[&] (Args&&... args) {
             Singleton<T>::ptr.reset(new T(std::forward<Args>(args)...));
         },std::forward<Args>(args)...);
+        return ptr.get();
+    }
+    static decltype (auto) getHandler () {
         return ptr.get();
     }
 };
